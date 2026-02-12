@@ -1,0 +1,159 @@
+#include <iostream>
+#include <fstream>
+#include <stack>
+#include <sstream>
+#include <vector>
+#include <string>
+
+// Клас для зручного зчитування рядків
+class LineReader
+{
+public:
+    friend std::istream& operator>>(std::istream& is, LineReader& lr)
+    {
+        if (!std::getline(is, lr.line_))
+        {
+            lr.line_.clear();
+        }
+        return is;
+    }
+
+    const std::string& getLine() const { return line_; }
+    bool empty() const { return line_.empty(); }
+
+private:
+    std::string line_;
+};
+
+// Клас для керування стеком рядків
+class LStringStack
+{
+public:
+    void pushLine(const std::string& text) { m_stack.push(text); }
+
+    std::string popLine()
+    {
+        if (m_stack.empty()) return std::string();
+        std::string top = m_stack.top();
+        m_stack.pop();
+        return top;
+    }
+
+    bool isEmpty() const { return m_stack.empty(); }
+
+    void clearStack()
+    {
+        while (!m_stack.empty()) m_stack.pop();
+    }
+
+    void printStack()
+    {
+        if (m_stack.empty()) {
+            std::cout << "Stack is empty.\n";
+            return;
+        }
+        std::stack<std::string> temp = m_stack;
+        while (!temp.empty()) {
+            std::cout << temp.top() << "\n";
+            temp.pop();
+        }
+    }
+
+    void reverseStack()
+    {
+        std::vector<std::string> v;
+        while (!m_stack.empty()) {
+            v.push_back(m_stack.top());
+            m_stack.pop();
+        }
+        for (const auto& line : v) m_stack.push(line);
+    }
+
+    void renumberStack()
+    {
+        std::vector<std::string> v;
+        int count = 1;
+        while (!m_stack.empty()) {
+            v.push_back(std::to_string(count++) + ": " + m_stack.top());
+            m_stack.pop();
+        }
+        for (auto it = v.rbegin(); it != v.rend(); ++it) m_stack.push(*it);
+    }
+
+    bool makeRenumberedCopy(const std::string& inFile, const std::string& outFile)
+    {
+        std::ifstream fin(inFile);
+        std::ofstream fout(outFile);
+        if (!fin || !fout) return false;
+
+        std::string line;
+        int count = 1;
+        while (std::getline(fin, line)) {
+            fout << count++ << ": " << line << "\n";
+        }
+        return true;
+    }
+
+private:
+    std::stack<std::string> m_stack;
+};
+
+int main()
+{
+    LStringStack myFileStack;
+    int choice;
+
+    while (true)
+    {
+        std::cout << "\n--- STL STACK MENU ---\n"
+                  << "1. Read and print file content\n"
+                  << "2. Load file into stack\n"
+                  << "3. Reverse current stack\n"
+                  << "4. Renumber current stack\n"
+                  << "5. Create renumbered file copy\n"
+                  << "6. Clear stack\n"
+                  << "7. Exit\n"
+                  << "Select: ";
+        
+        if (!(std::cin >> choice)) break;
+        std::cin.ignore();
+
+        if (choice == 1) {
+            std::string name;
+            std::cout << "Enter file name: ";
+            std::getline(std::cin, name);
+            std::ifstream f(name);
+            std::string l;
+            while (std::getline(f, l)) std::cout << l << "\n";
+        }
+        else if (choice == 2) {
+            std::string name;
+            std::cout << "Enter file name: ";
+            std::getline(std::cin, name);
+            std::ifstream f(name);
+            std::string l;
+            while (std::getline(f, l)) myFileStack.pushLine(l);
+            myFileStack.printStack();
+        }
+        else if (choice == 3) {
+            myFileStack.reverseStack();
+            myFileStack.printStack();
+        }
+        else if (choice == 4) {
+            myFileStack.renumberStack();
+            myFileStack.printStack();
+        }
+        else if (choice == 5) {
+            std::string in, out;
+            std::cout << "Source file: "; std::getline(std::cin, in);
+            std::cout << "Target file: "; std::getline(std::cin, out);
+            if (myFileStack.makeRenumberedCopy(in, out)) std::cout << "Done.\n";
+        }
+        else if (choice == 6) {
+            myFileStack.clearStack();
+            std::cout << "Cleared.\n";
+        }
+        else if (choice == 7) break;
+    }
+    return 0;
+}
